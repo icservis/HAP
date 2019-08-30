@@ -122,7 +122,7 @@ print("Initializing the server...")
 
 // Switch the lights every 5 seconds.
 let timer = DispatchSource.makeTimerSource()
-timer.schedule(deadline: .now() + .seconds(1), repeating: .seconds(5))
+timer.schedule(deadline: .now() + .seconds(1), repeating: .seconds(1))
 timer.setEventHandler(handler: {
     if let temperature = SMC.shared.cpuTemperature() {
         cpu.temperatureSensor.currentTemperature.value = Float(temperature.celsius)
