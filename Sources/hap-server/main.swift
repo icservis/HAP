@@ -1,6 +1,7 @@
 import Foundation
 import func Evergreen.getLogger
 import HAP
+import SMC
 
 fileprivate let logger = getLogger("demo")
 
@@ -20,28 +21,32 @@ if CommandLine.arguments.contains("--recreate") {
     try storage.write(Data())
 }
 
-let livingRoomLightbulb = Accessory.Lightbulb(info: Service.Info(name: "Living Room", serialNumber: "00002"))
-let bedroomNightStand = Accessory.Lightbulb(info: Service.Info(name: "Bedroom", serialNumber: "00003"))
+#if DEBUG
+SMC.shared.printSystemInformation()
+#endif
+
+let cpu = Accessory.Thermometer(
+    info: Service.Info(name: "CPU", serialNumber: SMC.Sensor.CPU.proximity)
+)
+let gpu = Accessory.Thermometer(
+    info: Service.Info(name: "GPU", serialNumber: SMC.Sensor.GPU.proximity)
+)
+var fans: [Accessory.Fan] = []
+for fan in SMC.shared.fans() {
+    let item = Accessory.Fan(
+        info: Service.Info(name: "Fan-\(fan.identifier)", serialNumber: "\(fan.identifier)")
+    )
+    fans.append(item)
+}
+
+let accessories: [Accessory] = [ cpu, gpu ] + fans
 
 let device = Device(
     bridgeInfo: Service.Info(name: "Bridge", serialNumber: "00001"),
     setupCode: "123-44-321",
     storage: storage,
-    accessories: [
-        livingRoomLightbulb,
-        bedroomNightStand
-//        Accessory.Door(info: Service.Info(name: "Front Door", serialNumber: "00005")),
-//        Accessory.Switch(info: Service.Info(name: "Garden Lights", serialNumber: "00006")),
-//        Accessory.Thermostat(info: Service.Info(name: "Living Room Thermostat", serialNumber: "00007")),
-//        Accessory.Thermometer(info: Service.Info(name: "Office Thermometer", serialNumber: "00008")),
-//        Accessory.Outlet(info: Service.Info(name: "Coffee Machine", serialNumber: "00009")),
-//        Accessory.Window(info: Service.Info(name: "Toilet Window", serialNumber: "00010")),
-//        Accessory.WindowCovering(info: Service.Info(name: "Shades", serialNumber: "00011")),
-//        Accessory.Fan(info: Service.Info(name: "Living Room Ceiling Fan", serialNumber: "00012")),
-//        Accessory.GarageDoorOpener(info: Service.Info(name: "Garage", serialNumber: "00013")),
-//        Accessory.LockMechanism(info: Service.Info(name: "Front Door Lock", serialNumber: "00014")),
-//        Accessory.SecuritySystem(info: Service.Info(name: "Alarm", serialNumber: "00015"))
-    ])
+    accessories: accessories
+)
 
 class MyDeviceDelegate: DeviceDelegate {
     func didRequestIdentificationOf(_ accessory: Accessory) {
@@ -119,7 +124,18 @@ print("Initializing the server...")
 let timer = DispatchSource.makeTimerSource()
 timer.schedule(deadline: .now() + .seconds(1), repeating: .seconds(5))
 timer.setEventHandler(handler: {
-    livingRoomLightbulb.lightbulb.powerState.value = !(livingRoomLightbulb.lightbulb.powerState.value ?? false)
+    if let temperature = SMC.shared.cpuTemperature() {
+        cpu.temperatureSensor.currentTemperature.value = Float(temperature.celsius)
+    }
+    if let temperature = SMC.shared.gpuTemperature() {
+        gpu.temperatureSensor.currentTemperature.value = Float(temperature.celsius)
+    }
+    for (index, fan) in SMC.shared.fans().enumerated() {
+        if let currentRPM = fan.currentRPM {
+            fans[index].fan.powerState.value = currentRPM > 0
+            fans[index].fan.rotationSpeed?.value = Float(currentRPM)
+        }
+    }
 })
 timer.resume()
 

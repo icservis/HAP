@@ -16,13 +16,14 @@ let package = Package(
         .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "1.0.21"),
         .package(url: "https://github.com/crossroadlabs/Regex.git", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "1.11.0"),
+        .package(url: "https://github.com/icservis/SMC.git", from: "1.0.3")
     ],
     targets: [
         .target(name: "CQRCode"),
         .target(name: "COperatingSystem"),
         .target(name: "HTTP", dependencies: ["NIO", "NIOHTTP1", "NIOFoundationCompat", "COperatingSystem"]),
         .target(name: "HAP", dependencies: ["SRP", "Cryptor", "Evergreen", "HKDF", "Regex", "CQRCode", "HTTP"]),
-        .target(name: "hap-server", dependencies: ["HAP", "Evergreen"]),
+        .target(name: "hap-server", dependencies: ["HAP", "Evergreen", "SMC"]),
         .testTarget(name: "HAPTests", dependencies: ["HAP"]),
     ]
 )
