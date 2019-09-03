@@ -10,5 +10,11 @@ extension Accessory {
 
 extension Service {
     public class Fan: FanBase {
+        public override init(characteristics: [AnyCharacteristic] = []) {
+            super.init(characteristics: [
+                AnyCharacteristic(PredefinedCharacteristic.rotationSpeed(unit: .percentage)),
+                AnyCharacteristic(PredefinedCharacteristic.rotationDirection())
+            ])
+        }
     }
 }

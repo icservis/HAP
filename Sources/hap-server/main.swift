@@ -133,7 +133,9 @@ timer.setEventHandler(handler: {
     for (index, fan) in SMC.shared.fans().enumerated() {
         if let currentRPM = fan.currentRPM {
             fans[index].fan.powerState.value = currentRPM > 0
-            fans[index].fan.rotationSpeed?.value = Float(currentRPM)
+            fans[index].fan.rotationSpeed?.value = 100 * Float(currentRPM) / Float(fan.maximumRPM ?? currentRPM)
+        } else {
+            fans[index].fan.powerState.value = false
         }
     }
 })
